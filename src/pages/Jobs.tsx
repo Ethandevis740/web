@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Briefcase, Building2, MapPin, Clock, Search, Filter, MessageSquare, Send, Plus, Eye, Calendar, DollarSign } from 'lucide-react';
+import { Briefcase, Building2, MapPin, Clock, Search, Filter, MessageSquare, Send, Plus, Eye, Calendar, DollarSign, Upload, X } from 'lucide-react';
+import { useAuth } from '../components/AuthContext';
 import { JobPostModal } from '../components/JobPostModal';
 
 interface Job {
@@ -32,7 +33,14 @@ interface Job {
   createdAt: string;
 }
 
+interface JobApplication {
+  name: string;
+  qualification: string;
+  cv: File | null;
+}
+
 const Jobs = () => {
+  const { user } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,37 +49,187 @@ const Jobs = () => {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [showJobPostModal, setShowJobPostModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
+  const [showApplicationModal, setShowApplicationModal] = useState(false);
   const [contactMessage, setContactMessage] = useState('');
-  const [user, setUser] = useState<any>(null);
+  const [applicationData, setApplicationData] = useState<JobApplication>({
+    name: '',
+    qualification: '',
+    cv: null
+  });
+
+  // Sample job data
+  const sampleJobs: Job[] = [
+    {
+      _id: '1',
+      title: 'Senior Software Engineer',
+      company: 'TechCorp Solutions',
+      location: 'Lahore, Pakistan',
+      jobType: 'Full-time',
+      category: 'Technology',
+      experienceLevel: 'Senior Level',
+      description: 'We are looking for a Senior Software Engineer to join our dynamic team. You will be responsible for developing scalable web applications, mentoring junior developers, and contributing to architectural decisions.',
+      requirements: [
+        '5+ years of experience in software development',
+        'Proficiency in React, Node.js, and TypeScript',
+        'Experience with cloud platforms (AWS/Azure)',
+        'Strong problem-solving skills',
+        'Bachelor\'s degree in Computer Science or related field'
+      ],
+      responsibilities: [
+        'Design and develop high-quality software solutions',
+        'Collaborate with cross-functional teams',
+        'Mentor junior developers',
+        'Participate in code reviews and technical discussions',
+        'Contribute to system architecture and design decisions'
+      ],
+      salaryRange: {
+        min: 150000,
+        max: 250000,
+        currency: 'PKR'
+      },
+      applicationDeadline: '2025-03-15',
+      applicationMethod: 'email',
+      applicationEmail: 'careers@techcorp.com',
+      postedBy: {
+        firstName: 'Ahmed',
+        lastName: 'Khan',
+        email: 'ahmed.khan@techcorp.com'
+      },
+      views: 245,
+      applicationCount: 23,
+      createdAt: '2025-01-15'
+    },
+    {
+      _id: '2',
+      title: 'Marketing Manager',
+      company: 'Digital Marketing Pro',
+      location: 'Karachi, Pakistan',
+      jobType: 'Full-time',
+      category: 'Marketing',
+      experienceLevel: 'Mid Level',
+      description: 'Join our marketing team as a Marketing Manager to lead digital marketing campaigns, manage social media presence, and drive brand awareness for our clients.',
+      requirements: [
+        '3+ years of marketing experience',
+        'Experience with digital marketing tools',
+        'Strong analytical and communication skills',
+        'Knowledge of SEO and social media marketing',
+        'MBA in Marketing preferred'
+      ],
+      responsibilities: [
+        'Develop and execute marketing strategies',
+        'Manage social media accounts and campaigns',
+        'Analyze marketing metrics and ROI',
+        'Coordinate with design and content teams',
+        'Present campaign results to clients'
+      ],
+      salaryRange: {
+        min: 80000,
+        max: 120000,
+        currency: 'PKR'
+      },
+      applicationDeadline: '2025-02-28',
+      applicationMethod: 'email',
+      applicationEmail: 'hr@digitalmarketingpro.com',
+      postedBy: {
+        firstName: 'Sarah',
+        lastName: 'Ahmed',
+        email: 'sarah.ahmed@digitalmarketingpro.com'
+      },
+      views: 189,
+      applicationCount: 31,
+      createdAt: '2025-01-10'
+    },
+    {
+      _id: '3',
+      title: 'Financial Analyst',
+      company: 'InvestCorp Bank',
+      location: 'Islamabad, Pakistan',
+      jobType: 'Full-time',
+      category: 'Finance',
+      experienceLevel: 'Entry Level',
+      description: 'We are seeking a detail-oriented Financial Analyst to join our investment team. You will analyze financial data, prepare reports, and support investment decision-making processes.',
+      requirements: [
+        'Bachelor\'s degree in Finance, Economics, or related field',
+        'Strong analytical and mathematical skills',
+        'Proficiency in Excel and financial modeling',
+        'Knowledge of financial markets and instruments',
+        'CFA Level 1 preferred but not required'
+      ],
+      responsibilities: [
+        'Analyze financial statements and market data',
+        'Prepare investment research reports',
+        'Support portfolio management activities',
+        'Monitor market trends and economic indicators',
+        'Assist in client presentations and meetings'
+      ],
+      salaryRange: {
+        min: 60000,
+        max: 90000,
+        currency: 'PKR'
+      },
+      applicationDeadline: '2025-02-20',
+      applicationMethod: 'email',
+      applicationEmail: 'careers@investcorp.com',
+      postedBy: {
+        firstName: 'Ali',
+        lastName: 'Hassan',
+        email: 'ali.hassan@investcorp.com'
+      },
+      views: 156,
+      applicationCount: 18,
+      createdAt: '2025-01-08'
+    },
+    {
+      _id: '4',
+      title: 'Product Manager',
+      company: 'Innovation Labs',
+      location: 'Remote',
+      jobType: 'Remote',
+      category: 'Technology',
+      experienceLevel: 'Senior Level',
+      description: 'Lead product development initiatives for our cutting-edge technology solutions. Work with engineering, design, and business teams to deliver exceptional products.',
+      requirements: [
+        '4+ years of product management experience',
+        'Experience with agile development methodologies',
+        'Strong leadership and communication skills',
+        'Technical background preferred',
+        'Experience with product analytics tools'
+      ],
+      responsibilities: [
+        'Define product roadmap and strategy',
+        'Work closely with engineering and design teams',
+        'Conduct market research and competitive analysis',
+        'Manage product launches and go-to-market strategies',
+        'Analyze product metrics and user feedback'
+      ],
+      salaryRange: {
+        min: 200000,
+        max: 300000,
+        currency: 'PKR'
+      },
+      applicationDeadline: '2025-03-01',
+      applicationMethod: 'website',
+      applicationUrl: 'https://innovationlabs.com/careers',
+      postedBy: {
+        firstName: 'Fatima',
+        lastName: 'Malik',
+        email: 'fatima.malik@innovationlabs.com'
+      },
+      views: 298,
+      applicationCount: 42,
+      createdAt: '2025-01-05'
+    }
+  ];
 
   useEffect(() => {
-    // Check if user is logged in
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-    
-    fetchJobs();
+    // Use sample data instead of API call
+    setJobs(sampleJobs);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
     filterJobs();
   }, [jobs, filter, searchTerm]);
-
-  const fetchJobs = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/api/jobs');
-      const data = await response.json();
-      
-      if (data.success) {
-        setJobs(data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching jobs:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filterJobs = () => {
     let filtered = jobs;
@@ -93,42 +251,17 @@ const Jobs = () => {
     setFilteredJobs(filtered);
   };
 
-  const handleJobClick = async (job: Job) => {
+  const handleJobClick = (job: Job) => {
     setSelectedJob(job);
-    
-    // Increment view count
-    try {
-      await fetch(`http://localhost:5000/api/jobs/${job._id}`, {
-        method: 'GET',
-      });
-    } catch (error) {
-      console.error('Error updating view count:', error);
-    }
   };
 
-  const handleApplyJob = async (job: Job) => {
+  const handleApplyJob = (job: Job) => {
     if (!user) {
       alert('Please login to apply for jobs');
       return;
     }
-
-    try {
-      const response = await fetch(`http://localhost:5000/api/jobs/${job._id}/apply`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        alert('Application submitted successfully!');
-      } else {
-        alert(data.message || 'Failed to apply');
-      }
-    } catch (error) {
-      console.error('Error applying for job:', error);
-      alert('Error applying for job');
-    }
+    setSelectedJob(job);
+    setShowApplicationModal(true);
   };
 
   const handleContactRecruiter = (job: Job) => {
@@ -136,7 +269,39 @@ const Jobs = () => {
     setShowContactModal(true);
   };
 
-  const sendContactMessage = async () => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Check file type
+      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('Please upload a PDF or Word document');
+        return;
+      }
+      
+      // Check file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size should be less than 5MB');
+        return;
+      }
+      
+      setApplicationData({ ...applicationData, cv: file });
+    }
+  };
+
+  const submitApplication = () => {
+    if (!applicationData.name || !applicationData.qualification || !applicationData.cv) {
+      alert('Please fill in all required fields and upload your CV');
+      return;
+    }
+    
+    // In a real implementation, this would upload the file and submit the application
+    alert('Application submitted successfully! The recruiter will contact you soon.');
+    setShowApplicationModal(false);
+    setApplicationData({ name: '', qualification: '', cv: null });
+  };
+
+  const sendContactMessage = () => {
     if (!contactMessage.trim()) return;
 
     // In a real implementation, this would send an email or message
@@ -204,6 +369,42 @@ const Jobs = () => {
         </div>
       </section>
 
+      {/* Job Statistics */}
+      <section className="bg-white py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+            <div className="p-6">
+              <div className="flex items-center justify-center mb-2">
+                <Briefcase className="h-8 w-8 text-green-800" />
+              </div>
+              <p className="text-3xl font-bold text-green-800">{jobs.length}</p>
+              <p className="text-gray-600">Active Jobs</p>
+            </div>
+            <div className="p-6">
+              <div className="flex items-center justify-center mb-2">
+                <Building2 className="h-8 w-8 text-blue-600" />
+              </div>
+              <p className="text-3xl font-bold text-blue-600">{new Set(jobs.map(job => job.company)).size}</p>
+              <p className="text-gray-600">Companies</p>
+            </div>
+            <div className="p-6">
+              <div className="flex items-center justify-center mb-2">
+                <Eye className="h-8 w-8 text-purple-600" />
+              </div>
+              <p className="text-3xl font-bold text-purple-600">{jobs.reduce((sum, job) => sum + job.views, 0)}</p>
+              <p className="text-gray-600">Total Views</p>
+            </div>
+            <div className="p-6">
+              <div className="flex items-center justify-center mb-2">
+                <Send className="h-8 w-8 text-yellow-600" />
+              </div>
+              <p className="text-3xl font-bold text-yellow-600">{jobs.reduce((sum, job) => sum + job.applicationCount, 0)}</p>
+              <p className="text-gray-600">Applications</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Search and Filter */}
       <section className="bg-white py-8 border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -244,26 +445,30 @@ const Jobs = () => {
                 Technology
               </button>
               <button 
-                onClick={() => setFilter('engineering')}
+                onClick={() => setFilter('marketing')}
                 className={`px-4 py-2 rounded-md transition-colors ${
-                  filter === 'engineering' 
+                  filter === 'marketing' 
                     ? 'bg-green-800 text-white' 
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                Engineering
+                Marketing
               </button>
               <button 
-                onClick={() => setFilter('business')}
+                onClick={() => setFilter('finance')}
                 className={`px-4 py-2 rounded-md transition-colors ${
-                  filter === 'business' 
+                  filter === 'finance' 
                     ? 'bg-green-800 text-white' 
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                Business
+                Finance
               </button>
             </div>
+          </div>
+          
+          <div className="mt-4 text-sm text-gray-600">
+            Showing {filteredJobs.length} of {jobs.length} jobs
           </div>
         </div>
       </section>
@@ -283,25 +488,25 @@ const Jobs = () => {
                 <div key={job._id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
                   <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold text-green-800 mb-2">{job.title}</h3>
+                      <h3 className="text-2xl font-bold text-green-800 mb-2">{job.title}</h3>
                       <div className="flex items-center gap-4 text-gray-600 mb-2">
                         <div className="flex items-center">
-                          <Building2 className="h-4 w-4 mr-2" />
-                          <span>{job.company}</span>
+                          <Building2 className="h-5 w-5 mr-2" />
+                          <span className="font-medium text-lg">{job.company}</span>
                         </div>
                         <div className="flex items-center">
-                          <MapPin className="h-4 w-4 mr-2" />
+                          <MapPin className="h-5 w-5 mr-2" />
                           <span>{job.location}</span>
                         </div>
                         <div className="flex items-center">
-                          <Eye className="h-4 w-4 mr-2" />
+                          <Eye className="h-5 w-5 mr-2" />
                           <span>{job.views} views</span>
                         </div>
                       </div>
                       {job.salaryRange && (
-                        <div className="flex items-center text-green-700 mb-2">
-                          <DollarSign className="h-4 w-4 mr-2" />
-                          <span className="font-semibold">{formatSalary(job.salaryRange)}</span>
+                        <div className="flex items-center text-green-700 mb-3">
+                          <DollarSign className="h-5 w-5 mr-2" />
+                          <span className="font-semibold text-lg">{formatSalary(job.salaryRange)}</span>
                         </div>
                       )}
                     </div>
@@ -312,7 +517,7 @@ const Jobs = () => {
                           job.jobType === 'Full-time' ? 'bg-green-100 text-green-800' :
                           job.jobType === 'Part-time' ? 'bg-blue-100 text-blue-800' :
                           job.jobType === 'Contract' ? 'bg-purple-100 text-purple-800' :
-                          job.jobType === 'Internship' ? 'bg-orange-100 text-orange-800' :
+                          job.jobType === 'Remote' ? 'bg-orange-100 text-orange-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
                           {job.jobType}
@@ -352,7 +557,7 @@ const Jobs = () => {
                         <>
                           <button 
                             onClick={() => handleApplyJob(job)}
-                            className="px-4 py-2 bg-yellow-500 text-green-900 rounded-md hover:bg-yellow-600 transition-colors font-semibold"
+                            className="px-6 py-2 bg-yellow-500 text-green-900 rounded-md hover:bg-yellow-600 transition-colors font-semibold"
                           >
                             Apply Now
                           </button>
@@ -380,7 +585,7 @@ const Jobs = () => {
       </section>
 
       {/* Job Details Modal */}
-      {selectedJob && !showContactModal && (
+      {selectedJob && !showContactModal && !showApplicationModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
@@ -390,7 +595,7 @@ const Jobs = () => {
                   <div className="flex items-center gap-4 text-gray-600">
                     <div className="flex items-center">
                       <Building2 className="h-5 w-5 mr-2" />
-                      <span className="text-lg">{selectedJob.company}</span>
+                      <span className="text-lg font-medium">{selectedJob.company}</span>
                     </div>
                     <div className="flex items-center">
                       <MapPin className="h-5 w-5 mr-2" />
@@ -445,7 +650,7 @@ const Jobs = () => {
                 </div>
 
                 <div className="lg:col-span-1">
-                  <div className="bg-gray-50 rounded-lg p-6 space-y-4">
+                  <div className="bg-gray-50 rounded-lg p-6 space-y-4 sticky top-4">
                     <h3 className="text-lg font-semibold text-gray-800">Job Details</h3>
                     
                     <div className="space-y-3">
@@ -483,6 +688,11 @@ const Jobs = () => {
                         <span className="text-sm font-medium text-gray-500">Posted By</span>
                         <p className="text-gray-800">{selectedJob.postedBy.firstName} {selectedJob.postedBy.lastName}</p>
                       </div>
+                      
+                      <div>
+                        <span className="text-sm font-medium text-gray-500">Views</span>
+                        <p className="text-gray-800">{selectedJob.views}</p>
+                      </div>
                     </div>
 
                     {!isDeadlinePassed(selectedJob.applicationDeadline) && (
@@ -505,6 +715,90 @@ const Jobs = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Application Modal */}
+      {showApplicationModal && selectedJob && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-green-800">Apply for Job</h3>
+              <button 
+                onClick={() => setShowApplicationModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="mb-4">
+              <p className="text-gray-600 mb-2">Applying for:</p>
+              <p className="font-semibold text-gray-800">{selectedJob.title} at {selectedJob.company}</p>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                <input
+                  type="text"
+                  value={applicationData.name}
+                  onChange={(e) => setApplicationData({ ...applicationData, name: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="Enter your full name"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Qualification *</label>
+                <textarea
+                  value={applicationData.qualification}
+                  onChange={(e) => setApplicationData({ ...applicationData, qualification: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  rows={3}
+                  placeholder="Describe your qualifications and relevant experience"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Upload CV *</label>
+                <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center">
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    id="cv-upload"
+                  />
+                  <label htmlFor="cv-upload" className="cursor-pointer">
+                    <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-600">Click to upload CV (PDF or Word)</p>
+                    <p className="text-xs text-gray-500 mt-1">Max file size: 5MB</p>
+                  </label>
+                  {applicationData.cv && (
+                    <div className="mt-2 text-green-600">
+                      <p className="text-sm">✓ {applicationData.cv.name}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setShowApplicationModal(false)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitApplication}
+                className="px-6 py-2 bg-green-800 text-white rounded-md hover:bg-green-700 font-semibold"
+              >
+                Submit Application
+              </button>
             </div>
           </div>
         </div>
@@ -561,7 +855,6 @@ const Jobs = () => {
         isOpen={showJobPostModal}
         onClose={() => setShowJobPostModal(false)}
         onJobPosted={() => {
-          fetchJobs();
           setShowJobPostModal(false);
         }}
       />

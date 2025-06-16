@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, MapPin, Clock, Users, Filter, Search, Plus, Star, Eye, ChevronRight } from 'lucide-react';
+import { useAuth } from '../components/AuthContext';
 import { EventRegistrationModal } from '../components/EventRegistrationModal';
 import { EventIdeaModal } from '../components/EventIdeaModal';
 import { EventDetailsModal } from '../components/EventDetailsModal';
@@ -89,6 +90,7 @@ interface Event {
 }
 
 const Events = () => {
+  const { user } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,34 +101,231 @@ const Events = () => {
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
   const [showIdeaModal, setShowIdeaModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [nextEventCountdown, setNextEventCountdown] = useState('');
+
+  // Sample upcoming events data
+  const sampleEvents: Event[] = [
+    {
+      _id: '1',
+      title: 'Annual Alumni Reunion 2025',
+      description: 'Join us for our biggest alumni gathering of the year! Reconnect with classmates, network with professionals, and celebrate our shared Namal experience.',
+      shortDescription: 'The biggest alumni gathering of the year with networking and celebrations.',
+      date: '2025-06-15',
+      startTime: '10:00',
+      endTime: '18:00',
+      duration: 480,
+      location: 'Namal University Campus, Mianwali',
+      venue: {
+        name: 'Main Auditorium',
+        address: '30 km Talagang Road',
+        city: 'Mianwali'
+      },
+      type: 'Reunion',
+      category: 'Social',
+      capacity: 500,
+      registeredCount: 287,
+      isVirtual: false,
+      images: [{
+        url: 'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+        caption: 'Alumni Reunion',
+        isPrimary: true
+      }],
+      gallery: [],
+      organizer: {
+        name: 'Alumni Relations Office',
+        email: 'alumni@namal.edu.pk',
+        organization: 'Namal University'
+      },
+      speakers: [],
+      agenda: [],
+      requirements: [],
+      benefits: ['Networking opportunities', 'Campus tour', 'Dinner included'],
+      tags: ['reunion', 'networking', 'campus'],
+      registrationFee: { amount: 2000, currency: 'PKR' },
+      registrationDeadline: '2025-06-10',
+      createdBy: { firstName: 'Admin', lastName: 'User', email: 'admin@namal.edu.pk' },
+      status: 'Published',
+      visibility: 'Public',
+      feedback: [],
+      averageRating: 0,
+      totalFeedback: 0,
+      isPast: false,
+      isRegistrationOpen: true,
+      spotsRemaining: 213,
+      createdAt: '2025-01-15'
+    },
+    {
+      _id: '2',
+      title: 'Tech Career Workshop',
+      description: 'Learn about the latest trends in technology careers, get insights from industry experts, and discover new opportunities in the tech sector.',
+      shortDescription: 'Industry insights and career guidance for tech professionals.',
+      date: '2025-02-20',
+      startTime: '14:00',
+      endTime: '17:00',
+      duration: 180,
+      location: 'Virtual Event',
+      type: 'Workshop',
+      category: 'Professional',
+      capacity: 200,
+      registeredCount: 156,
+      isVirtual: true,
+      meetingLink: 'https://zoom.us/j/123456789',
+      images: [{
+        url: 'https://images.pexels.com/photos/3183183/pexels-photo-3183183.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+        caption: 'Tech Workshop',
+        isPrimary: true
+      }],
+      gallery: [],
+      organizer: {
+        name: 'Tech Alumni Chapter',
+        email: 'tech@namal.edu.pk'
+      },
+      speakers: [],
+      agenda: [],
+      requirements: [],
+      benefits: ['Industry insights', 'Networking', 'Career guidance'],
+      tags: ['technology', 'career', 'workshop'],
+      registrationFee: { amount: 0, currency: 'PKR' },
+      registrationDeadline: '2025-02-18',
+      createdBy: { firstName: 'Tech', lastName: 'Chapter', email: 'tech@namal.edu.pk' },
+      status: 'Published',
+      visibility: 'Public',
+      feedback: [],
+      averageRating: 0,
+      totalFeedback: 0,
+      isPast: false,
+      isRegistrationOpen: true,
+      spotsRemaining: 44,
+      createdAt: '2025-01-10'
+    },
+    {
+      _id: '3',
+      title: 'Entrepreneurship Summit',
+      description: 'Connect with successful alumni entrepreneurs, learn about startup strategies, and explore funding opportunities.',
+      shortDescription: 'Learn from successful entrepreneurs and explore startup opportunities.',
+      date: '2025-03-10',
+      startTime: '09:00',
+      endTime: '16:00',
+      duration: 420,
+      location: 'Lahore Business Center',
+      venue: {
+        name: 'Conference Hall A',
+        address: 'MM Alam Road',
+        city: 'Lahore'
+      },
+      type: 'Conference',
+      category: 'Business',
+      capacity: 150,
+      registeredCount: 89,
+      isVirtual: false,
+      images: [{
+        url: 'https://images.pexels.com/photos/3184292/pexels-photo-3184292.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+        caption: 'Entrepreneurship Summit',
+        isPrimary: true
+      }],
+      gallery: [],
+      organizer: {
+        name: 'Business Alumni Network',
+        email: 'business@namal.edu.pk'
+      },
+      speakers: [],
+      agenda: [],
+      requirements: [],
+      benefits: ['Startup insights', 'Funding opportunities', 'Mentorship'],
+      tags: ['entrepreneurship', 'business', 'startup'],
+      registrationFee: { amount: 3500, currency: 'PKR' },
+      registrationDeadline: '2025-03-05',
+      createdBy: { firstName: 'Business', lastName: 'Network', email: 'business@namal.edu.pk' },
+      status: 'Published',
+      visibility: 'Public',
+      feedback: [],
+      averageRating: 0,
+      totalFeedback: 0,
+      isPast: false,
+      isRegistrationOpen: true,
+      spotsRemaining: 61,
+      createdAt: '2025-01-05'
+    },
+    {
+      _id: '4',
+      title: 'Global Alumni Networking Night',
+      description: 'An exclusive evening for alumni to network, share experiences, and build lasting professional relationships.',
+      shortDescription: 'Exclusive networking evening for professional relationship building.',
+      date: '2025-04-05',
+      startTime: '19:00',
+      endTime: '22:00',
+      duration: 180,
+      location: 'Pearl Continental Hotel, Karachi',
+      venue: {
+        name: 'Grand Ballroom',
+        address: 'Club Road',
+        city: 'Karachi'
+      },
+      type: 'Networking',
+      category: 'Social',
+      capacity: 100,
+      registeredCount: 67,
+      isVirtual: false,
+      images: [{
+        url: 'https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+        caption: 'Networking Event',
+        isPrimary: true
+      }],
+      gallery: [],
+      organizer: {
+        name: 'Karachi Alumni Chapter',
+        email: 'karachi@namal.edu.pk'
+      },
+      speakers: [],
+      agenda: [],
+      requirements: [],
+      benefits: ['Professional networking', 'Dinner included', 'Industry connections'],
+      tags: ['networking', 'professional', 'social'],
+      registrationFee: { amount: 4000, currency: 'PKR' },
+      registrationDeadline: '2025-04-01',
+      createdBy: { firstName: 'Karachi', lastName: 'Chapter', email: 'karachi@namal.edu.pk' },
+      status: 'Published',
+      visibility: 'Public',
+      feedback: [],
+      averageRating: 0,
+      totalFeedback: 0,
+      isPast: false,
+      isRegistrationOpen: true,
+      spotsRemaining: 33,
+      createdAt: '2025-01-01'
+    }
+  ];
 
   useEffect(() => {
-    // Check if user is logged in
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-    
-    fetchEvents();
+    // Use sample data instead of API call
+    setEvents(sampleEvents);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
     filterEvents();
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 60000); // Update every minute
+    return () => clearInterval(interval);
   }, [events, filter, typeFilter, searchTerm]);
 
-  const fetchEvents = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/api/events');
-      const data = await response.json();
+  const updateCountdown = () => {
+    const upcomingEvents = events.filter(event => !event.isPast).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    if (upcomingEvents.length > 0) {
+      const nextEvent = upcomingEvents[0];
+      const eventDate = new Date(`${nextEvent.date} ${nextEvent.startTime}`);
+      const now = new Date();
+      const timeDiff = eventDate.getTime() - now.getTime();
       
-      if (data.success) {
-        setEvents(data.data);
+      if (timeDiff > 0) {
+        const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+        
+        setNextEventCountdown(`${days} days ${hours} hours ${minutes} minutes left`);
+      } else {
+        setNextEventCountdown('Event has started!');
       }
-    } catch (error) {
-      console.error('Error fetching events:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -196,7 +395,7 @@ const Events = () => {
     return 'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1';
   };
 
-  const upcomingEvents = events.filter(event => !event.isPast).slice(0, 3);
+  const upcomingEvents = events.filter(event => !event.isPast).slice(0, 4);
 
   if (loading) {
     return (
@@ -215,13 +414,22 @@ const Events = () => {
       <section className="relative bg-green-800 text-white">
         <div className="absolute inset-0 bg-[url('https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1')] bg-cover bg-center opacity-20"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-          <div className="max-w-3xl">
+          <div className="max-w-3xl text-center mx-auto">
             <h1 className="text-4xl md:text-5xl font-bold mb-6">Alumni Events & Reunions</h1>
             <p className="text-xl mb-8">Connect, learn, and grow with fellow Namal alumni through our exciting events and reunions.</p>
+            
+            {/* Live Countdown */}
+            {nextEventCountdown && upcomingEvents.length > 0 && (
+              <div className="bg-yellow-500 text-green-900 px-8 py-4 rounded-lg mb-8 inline-block">
+                <h2 className="text-2xl font-bold mb-2">Next Event: {upcomingEvents[0].title}</h2>
+                <p className="text-3xl font-extrabold">{nextEventCountdown}</p>
+              </div>
+            )}
+            
             {user && (
               <button
                 onClick={() => setShowIdeaModal(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-green-900 font-bold rounded-md transition-colors"
+                className="flex items-center gap-2 px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-green-900 font-bold rounded-md transition-colors mx-auto"
               >
                 <Plus className="h-5 w-5" />
                 Suggest an Event
@@ -231,25 +439,97 @@ const Events = () => {
         </div>
       </section>
 
-      {/* Event Countdown Section */}
-      {upcomingEvents.length > 0 && (
-        <section className="bg-white py-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-2xl font-bold text-green-800 mb-8 text-center">Upcoming Events</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {upcomingEvents.map(event => (
-                <EventCountdown 
-                  key={event._id} 
-                  title={event.title} 
-                  date={event.date}
-                  location={event.location}
-                  onClick={() => handleEventClick(event)}
-                />
-              ))}
-            </div>
+      {/* Upcoming Events Section */}
+      <section className="bg-white py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold text-green-800 mb-12 text-center">Upcoming Events</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
+            {upcomingEvents.map(event => (
+              <div key={event._id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                <div className="relative">
+                  <img 
+                    src={getEventImage(event)} 
+                    alt={event.title}
+                    className="w-full h-64 object-cover"
+                  />
+                  <div className="absolute top-4 left-4">
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      event.type === 'Reunion' ? 'bg-purple-100 text-purple-800' :
+                      event.type === 'Networking' ? 'bg-blue-100 text-blue-800' :
+                      event.type === 'Workshop' ? 'bg-green-100 text-green-800' :
+                      event.type === 'Conference' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {event.type}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="p-6">
+                  <h3 className="text-2xl font-bold text-green-800 mb-3">{event.title}</h3>
+                  <p className="text-gray-600 mb-4 line-clamp-2">{event.shortDescription || event.description}</p>
+                  
+                  <div className="space-y-3 mb-6">
+                    <div className="flex items-center text-gray-700">
+                      <Calendar className="h-5 w-5 mr-3 text-green-800" />
+                      <span className="font-medium">{formatDate(event.date)}</span>
+                    </div>
+                    <div className="flex items-center text-gray-700">
+                      <Clock className="h-5 w-5 mr-3 text-green-800" />
+                      <span className="font-medium">
+                        {formatTime(event.startTime)} - {formatTime(event.endTime)}
+                      </span>
+                    </div>
+                    <div className="flex items-center text-gray-700">
+                      <MapPin className="h-5 w-5 mr-3 text-green-800" />
+                      <span className="font-medium">{event.isVirtual ? 'Virtual Event' : event.location}</span>
+                    </div>
+                    {event.venue && (
+                      <div className="flex items-center text-gray-600 ml-8">
+                        <span className="text-sm">Venue: {event.venue.name}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center text-gray-700">
+                      <Users className="h-5 w-5 mr-3 text-green-800" />
+                      <span className="font-medium">
+                        {event.registeredCount}/{event.capacity} registered ({event.spotsRemaining} spots left)
+                      </span>
+                    </div>
+                  </div>
+
+                  {event.registrationFee.amount > 0 && (
+                    <div className="mb-4">
+                      <span className="text-xl font-bold text-green-700">
+                        {event.registrationFee.currency} {event.registrationFee.amount.toLocaleString()}
+                      </span>
+                      <span className="text-gray-600 ml-2">Registration Fee</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-center">
+                    <button 
+                      onClick={() => handleEventClick(event)}
+                      className="flex items-center text-green-800 hover:text-green-700 font-semibold"
+                    >
+                      View Details
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </button>
+                    
+                    {event.isRegistrationOpen && (
+                      <button 
+                        onClick={() => handleRegisterClick(event)}
+                        className="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-green-900 font-bold rounded-md transition-colors"
+                      >
+                        Register Now
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
       {/* Search and Filter */}
       <section className="bg-gray-50 py-8 border-b">
@@ -315,10 +595,10 @@ const Events = () => {
                 <option value="reunion">Reunion</option>
                 <option value="networking">Networking</option>
                 <option value="workshop">Workshop</option>
+                <option value="conference">Conference</option>
                 <option value="seminar">Seminar</option>
                 <option value="social">Social</option>
                 <option value="career">Career</option>
-                <option value="conference">Conference</option>
                 <option value="webinar">Webinar</option>
               </select>
             </div>
@@ -326,9 +606,10 @@ const Events = () => {
         </div>
       </section>
 
-      {/* Events Grid */}
+      {/* All Events Grid */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-bold text-green-800 mb-8">All Events</h2>
           {filteredEvents.length === 0 ? (
             <div className="text-center py-12">
               <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
@@ -350,20 +631,12 @@ const Events = () => {
                         event.type === 'Reunion' ? 'bg-purple-100 text-purple-800' :
                         event.type === 'Networking' ? 'bg-blue-100 text-blue-800' :
                         event.type === 'Workshop' ? 'bg-green-100 text-green-800' :
-                        event.type === 'Seminar' ? 'bg-yellow-100 text-yellow-800' :
-                        event.type === 'Social' ? 'bg-pink-100 text-pink-800' :
-                        event.type === 'Career' ? 'bg-indigo-100 text-indigo-800' :
+                        event.type === 'Conference' ? 'bg-yellow-100 text-yellow-800' :
                         'bg-gray-100 text-gray-800'
                       }`}>
                         {event.type}
                       </span>
                     </div>
-                    {event.isPast && event.averageRating > 0 && (
-                      <div className="absolute top-4 right-4 bg-white rounded-full px-2 py-1 flex items-center">
-                        <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                        <span className="ml-1 text-sm font-medium">{event.averageRating.toFixed(1)}</span>
-                      </div>
-                    )}
                   </div>
                   
                   <div className="p-6">
